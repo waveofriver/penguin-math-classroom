@@ -1,0 +1,126 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "publicRooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/)",
+        ".validate": "newData.hasChildren(['owner', 'createdAt', 'active', 'questionId', 'a', 'b']) && newData.child('owner').val() == newData.parent().parent().child('rooms').child($code).child('owner').val() && newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('a').val() == newData.child('a').val() && newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('b').val() == newData.child('b').val()",
+        "owner": {
+          ".validate": "newData.isString() && (!data.exists() || newData.val() == data.val())"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() == now) || newData.val() == data.val())"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "questionId": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 64 && newData.val().matches(/^[A-Za-z0-9_-]+$/)"
+        },
+        "a": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 9 && newData.val() % 1 == 0"
+        },
+        "b": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 9 && newData.val() % 1 == 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && data.child('owner').val() == auth.uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/)",
+        ".validate": "newData.hasChildren(['owner', 'createdAt', 'questions']) && newData.child('owner').val() == newData.parent().parent().child('publicRooms').child($code).child('owner').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('a').val() == newData.parent().parent().child('publicRooms').child($code).child('a').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('b').val() == newData.parent().parent().child('publicRooms').child($code).child('b').val()",
+        "owner": {
+          ".validate": "newData.isString() && (!data.exists() || newData.val() == data.val())"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() == now) || newData.val() == data.val())"
+        },
+        "questions": {
+          "$qid": {
+            ".validate": "newData.hasChildren(['a', 'b', 'createdAt'])",
+            "a": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 9 && newData.val() % 1 == 0"
+            },
+            "b": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 9 && newData.val() % 1 == 0"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && ((!data.exists() && newData.val() == now) || newData.val() == data.val())"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "seats": {
+          "$seat": {
+            ".read": "auth != null && root.child('publicRooms').child($code).child('active').val() == true && (!data.exists() || data.val() == auth.uid)",
+            ".write": "auth != null && root.child('publicRooms').child($code).child('active').val() == true && $seat.matches(/^[1-9][0-9]?$/) && (!data.exists() || data.val() == auth.uid) && newData.isString() && newData.val() == auth.uid && (!root.child('rooms').child($code).child('members').child(auth.uid).exists() || root.child('rooms').child($code).child('members').child(auth.uid).child('seat').val() + '' == $seat)",
+            ".validate": "newData.isString() && newData.val().length <= 128 && newData.parent().parent().child('members').child(auth.uid).child('seat').val() + '' == $seat"
+          }
+        },
+        "members": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && auth.uid == $uid && root.child('publicRooms').child($code).child('active').val() == true && newData.exists() && (!data.exists() || newData.child('seat').val() == data.child('seat').val()) && newData.parent().parent().child('seats').child(newData.child('seat').val() + '').val() == auth.uid",
+            ".validate": "newData.hasChildren(['seat', 'joinedAt'])",
+            "seat": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 99 && newData.val() % 1 == 0"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber() && ((!data.exists() && newData.val() == now) || newData.val() == data.val())"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "answers": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            "$qid": {
+              ".write": "auth != null && auth.uid == $uid && root.child('publicRooms').child($code).child('active').val() == true && root.child('rooms').child($code).child('members').child(auth.uid).exists() && root.child('publicRooms').child($code).child('questionId').val() == $qid && newData.exists()",
+              ".validate": "newData.hasChildren(['answer', 'attempt', 'mode', 'submittedAt']) && newData.child('attempt').val() == (data.child('attempt').exists() ? data.child('attempt').val() + 1 : 1) && newData.child('submittedAt').val() == now",
+              "answer": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99 && newData.val() % 1 == 0"
+              },
+              "attempt": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999 && newData.val() == (data.exists() ? data.val() + 1 : 1)"
+              },
+              "mode": {
+                ".validate": "newData.isString() && newData.val().matches(/^(basic|count|short|large|steps)$/)"
+              },
+              "submittedAt": {
+                ".validate": "newData.isNumber() && newData.val() == now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "teacherRooms": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && auth.uid == $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && auth.uid == $uid",
+        "$code": {
+          ".validate": "newData.val() == true && $code.matches(/^[A-Z2-9]{8}$/) && newData.parent().parent().parent().child('rooms').child($code).child('owner').val() == auth.uid"
+        }
+      }
+    },
+    "$other": {
+      ".validate": false
+    }
+  }
+}
