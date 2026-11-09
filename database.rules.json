@@ -5,8 +5,8 @@
     "publicRooms": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/)",
-        ".validate": "newData.hasChildren(['owner', 'createdAt', 'active', 'questionId', 'a', 'b']) && newData.child('owner').val() == newData.parent().parent().child('rooms').child($code).child('owner').val() && newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('a').val() == newData.child('a').val() && newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('b').val() == newData.child('b').val()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/) && (newData.exists() || !newData.parent().parent().child('rooms').child($code).exists())",
+        ".validate": "newData.hasChildren(['owner', 'createdAt', 'active', 'questionId']) && (((!newData.child('activity').exists() || newData.child('activity').val() == 'addition') && (newData.child('a').isNumber() && newData.child('a').val() >= 1 && newData.child('a').val() <= 9 && newData.child('a').val() % 1 == 0) && (newData.child('b').isNumber() && newData.child('b').val() >= 1 && newData.child('b').val() <= 9 && newData.child('b').val() % 1 == 0) && !newData.child('hour').exists() && !newData.child('minute').exists()) || (newData.child('activity').val() == 'clock' && (newData.child('hour').isNumber() && newData.child('hour').val() >= 1 && newData.child('hour').val() <= 12 && newData.child('hour').val() % 1 == 0) && (newData.child('minute').isNumber() && newData.child('minute').val() >= 0 && newData.child('minute').val() <= 55 && newData.child('minute').val() % 5 == 0) && !newData.child('a').exists() && !newData.child('b').exists())) && newData.child('owner').val() == newData.parent().parent().child('rooms').child($code).child('owner').val() && (((!newData.child('activity').exists() || newData.child('activity').val() == 'addition') && (!newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('activity').exists() || newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('activity').val() == 'addition') && newData.child('a').val() == newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('a').val() && newData.child('b').val() == newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('b').val()) || (newData.child('activity').val() == 'clock' && newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('activity').val() == 'clock' && newData.child('hour').val() == newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('hour').val() && newData.child('minute').val() == newData.parent().parent().child('rooms').child($code).child('questions').child(newData.child('questionId').val()).child('minute').val()))",
         "owner": {
           ".validate": "newData.isString() && (!data.exists() || newData.val() == data.val())"
         },
@@ -27,14 +27,29 @@
         },
         "$other": {
           ".validate": false
+        },
+        "activity": {
+          ".validate": "newData.isString() && newData.val().matches(/^(addition|clock)$/)"
+        },
+        "hour": {
+          ".validate": "(newData.isNumber() && newData.val() >= 1 && newData.val() <= 12 && newData.val() % 1 == 0)"
+        },
+        "minute": {
+          ".validate": "(newData.isNumber() && newData.val() >= 0 && newData.val() <= 55 && newData.val() % 5 == 0)"
+        },
+        "selectionPolicy": {
+          ".validate": "newData.isString() && newData.val().matches(/^(student|teacher)$/)"
+        },
+        "defaultMode": {
+          ".validate": "newData.isString() && newData.val().matches(/^(basic|count|short|large|steps)$/)"
         }
       }
     },
     "rooms": {
       "$code": {
         ".read": "auth != null && data.child('owner').val() == auth.uid",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/)",
-        ".validate": "newData.hasChildren(['owner', 'createdAt', 'questions']) && newData.child('owner').val() == newData.parent().parent().child('publicRooms').child($code).child('owner').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('a').val() == newData.parent().parent().child('publicRooms').child($code).child('a').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('b').val() == newData.parent().parent().child('publicRooms').child($code).child('b').val()",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider == 'google.com' && ((!data.exists() && newData.child('owner').val() == auth.uid) || (data.child('owner').val() == auth.uid && (!newData.exists() || newData.child('owner').val() == auth.uid))) && $code.matches(/^[A-Z2-9]{8}$/) && (newData.exists() || !newData.parent().parent().child('publicRooms').child($code).exists())",
+        ".validate": "newData.hasChildren(['owner', 'createdAt', 'questions']) && newData.child('owner').val() == newData.parent().parent().child('publicRooms').child($code).child('owner').val() && (((!newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('activity').exists() || newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('activity').val() == 'addition') && (!newData.parent().parent().child('publicRooms').child($code).child('activity').exists() || newData.parent().parent().child('publicRooms').child($code).child('activity').val() == 'addition') && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('a').val() == newData.parent().parent().child('publicRooms').child($code).child('a').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('b').val() == newData.parent().parent().child('publicRooms').child($code).child('b').val()) || (newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('activity').val() == 'clock' && newData.parent().parent().child('publicRooms').child($code).child('activity').val() == 'clock' && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('hour').val() == newData.parent().parent().child('publicRooms').child($code).child('hour').val() && newData.child('questions').child(newData.parent().parent().child('publicRooms').child($code).child('questionId').val()).child('minute').val() == newData.parent().parent().child('publicRooms').child($code).child('minute').val()))",
         "owner": {
           ".validate": "newData.isString() && (!data.exists() || newData.val() == data.val())"
         },
@@ -43,7 +58,7 @@
         },
         "questions": {
           "$qid": {
-            ".validate": "newData.hasChildren(['a', 'b', 'createdAt'])",
+            ".validate": "newData.hasChildren(['createdAt']) && (((!newData.child('activity').exists() || newData.child('activity').val() == 'addition') && (newData.child('a').isNumber() && newData.child('a').val() >= 1 && newData.child('a').val() <= 9 && newData.child('a').val() % 1 == 0) && (newData.child('b').isNumber() && newData.child('b').val() >= 1 && newData.child('b').val() <= 9 && newData.child('b').val() % 1 == 0) && !newData.child('hour').exists() && !newData.child('minute').exists()) || (newData.child('activity').val() == 'clock' && (newData.child('hour').isNumber() && newData.child('hour').val() >= 1 && newData.child('hour').val() <= 12 && newData.child('hour').val() % 1 == 0) && (newData.child('minute').isNumber() && newData.child('minute').val() >= 0 && newData.child('minute').val() <= 55 && newData.child('minute').val() % 5 == 0) && !newData.child('a').exists() && !newData.child('b').exists()))",
             "a": {
               ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 9 && newData.val() % 1 == 0"
             },
@@ -55,6 +70,15 @@
             },
             "$other": {
               ".validate": false
+            },
+            "activity": {
+              ".validate": "newData.isString() && newData.val().matches(/^(addition|clock)$/)"
+            },
+            "hour": {
+              ".validate": "(newData.isNumber() && newData.val() >= 1 && newData.val() <= 12 && newData.val() % 1 == 0)"
+            },
+            "minute": {
+              ".validate": "(newData.isNumber() && newData.val() >= 0 && newData.val() <= 55 && newData.val() % 5 == 0)"
             }
           }
         },
@@ -86,9 +110,9 @@
             ".read": "auth != null && auth.uid == $uid",
             "$qid": {
               ".write": "auth != null && auth.uid == $uid && root.child('publicRooms').child($code).child('active').val() == true && root.child('rooms').child($code).child('members').child(auth.uid).exists() && root.child('publicRooms').child($code).child('questionId').val() == $qid && newData.exists()",
-              ".validate": "newData.hasChildren(['answer', 'attempt', 'mode', 'submittedAt']) && newData.child('attempt').val() == (data.child('attempt').exists() ? data.child('attempt').val() + 1 : 1) && newData.child('submittedAt').val() == now",
+              ".validate": "newData.hasChildren(['answer', 'attempt', 'mode', 'submittedAt']) && newData.child('attempt').val() == (data.child('attempt').exists() ? data.child('attempt').val() + 1 : 1) && newData.child('submittedAt').val() == now && (newData.parent().parent().parent().parent().parent().child('publicRooms').child($code).child('selectionPolicy').val() != 'teacher' || newData.child('mode').val() == (newData.parent().parent().parent().parent().parent().child('rooms').child($code).child('supportByStudent').child($uid).exists() ? newData.parent().parent().parent().parent().parent().child('rooms').child($code).child('supportByStudent').child($uid).val() : (newData.parent().parent().parent().parent().parent().child('publicRooms').child($code).child('defaultMode').exists() ? newData.parent().parent().parent().parent().parent().child('publicRooms').child($code).child('defaultMode').val() : 'count')))",
               "answer": {
-                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99 && newData.val() % 1 == 0"
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && (((!newData.parent().parent().parent().parent().parent().parent().child('publicRooms').child($code).child('activity').exists() || newData.parent().parent().parent().parent().parent().parent().child('publicRooms').child($code).child('activity').val() == 'addition') && newData.val() >= 0 && newData.val() <= 99) || (newData.parent().parent().parent().parent().parent().parent().child('publicRooms').child($code).child('activity').val() == 'clock' && newData.val() >= 60 && newData.val() <= 775 && newData.val() % 5 == 0 && newData.val() % 60 <= 55))"
               },
               "attempt": {
                 ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999 && newData.val() == (data.exists() ? data.val() + 1 : 1)"
@@ -107,6 +131,12 @@
         },
         "$other": {
           ".validate": false
+        },
+        "supportByStudent": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".validate": "newData.isString() && newData.val().matches(/^(basic|count|short|large|steps)$/)"
+          }
         }
       }
     },
